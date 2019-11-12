@@ -4,6 +4,11 @@ use core::cell::{UnsafeCell, Cell};
 use core::ops::{Deref, DerefMut};
 use core::fmt;
 
+#[cfg(feature = "async")]
+mod async_cell;
+#[cfg(feature = "async")]
+pub use async_cell::AsyncCell;
+
 pub struct RwCell<T: ?Sized> {
     count: Cell<RwCount>,
     inner: UnsafeCell<T>,

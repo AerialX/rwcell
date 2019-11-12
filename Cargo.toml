@@ -8,3 +8,8 @@ categories = ["no-std"]
 
 [dependencies]
 const-default = { version = "^0.1.0", git = "https://github.com/AerialX/const-default.rs", optional = true }
+futures-core = { version = "^0.3.1", default-features = false, optional = true }
+wakers = { version = "^0.1.0", git = "https://github.com/AerialX/wakers.rs.git", default-features = false, optional = true }
+
+[features]
+async = ["wakers", "const-default"]
