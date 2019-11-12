@@ -29,12 +29,20 @@ impl<T: ?Sized + fmt::Debug> fmt::Debug for RwCell<T> {
     }
 }
 
+impl<T: Default> Default for RwCell<T> {
+    #[inline]
+    fn default() -> Self {
+        Self::new(Default::default())
+    }
+}
+
 #[cfg(feature = "const-default")]
 impl<T: const_default::ConstDefault> const_default::ConstDefault for RwCell<T> {
     const DEFAULT: Self = Self::new(T::DEFAULT);
 }
 
 impl<T: ?Sized> RwCell<T> {
+    #[inline]
     pub const fn new(value: T) -> Self where
         T: Sized
     {
@@ -44,60 +52,105 @@ impl<T: ?Sized> RwCell<T> {
         }
     }
 
+    #[inline]
     unsafe fn inner_mut(&self) -> &mut T {
         &mut *self.inner.get()
     }
 
+    #[inline]
     unsafe fn inner(&self) -> &T {
         &*self.inner.get()
     }
 
+    fn acquire_read(&self) -> bool {
+        match self.count.get().checked_add(1) {
+            None => false,
+            #[cfg(debug_assertions)]
+            Some(RW_WRITE) => false,
+            Some(count) => {
+                self.count.set(count);
+                true
+            },
+        }
+    }
+
+    unsafe fn release_read(&self) -> bool {
+        match self.count.get() {
+            #[cfg(debug_assertions)]
+            0 => false,
+            RW_WRITE => false, // NOTE: it's possible to poison a cell by hitting the max read limit
+            count => {
+                self.count.set(count - 1); // TODO: unchecked_sub
+                true
+            },
+        }
+    }
+
+    fn acquire_write(&self) -> bool {
+        match self.count.get() {
+            0 => {
+                self.count.set(RW_WRITE);
+                true
+            },
+            _ => false,
+        }
+    }
+
+    #[inline]
+    unsafe fn release_write(&self) -> bool {
+        let count = self.count.replace(0);
+        count == RW_WRITE
+    }
+
+    #[inline]
     pub fn ptr(&self) -> *const T {
         self.inner.get() as *const _
     }
 
+    #[inline]
     pub fn ptr_mut(&self) -> *mut T {
         self.inner.get()
     }
 
+    #[inline]
     pub fn try_read<'a>(&'a self) -> Option<RwRead<'a, T>> {
-        match self.count.get() {
-            RW_WRITE => None,
-            count => Some({
-                self.count.set(count + 1);
-                RwRead(self)
-            }),
+        match self.acquire_read() {
+            true => Some(RwRead(self)),
+            false => None,
         }
     }
 
+    #[inline]
     pub fn try_read_scope<F: FnOnce(&T) -> R, R>(&self, f: F) -> Option<R> {
         self.try_read().map(|t| f(&*t))
     }
 
+    #[inline]
     pub fn try_write<'a>(&'a self) -> Option<RwWrite<'a, T>> {
-        match self.count.get() {
-            0 => Some({
-                self.count.set(RW_WRITE);
-                RwWrite(self)
-            }),
-            _ => None,
+        match self.acquire_write() {
+            true => Some(RwWrite(self)),
+            false => None,
         }
     }
 
+    #[inline]
     pub fn try_write_scope<F: FnOnce(&mut T) -> R, R>(&self, f: F) -> Option<R> {
         self.try_write().map(|mut t| f(&mut *t))
     }
 
+    #[inline]
     pub fn get_mut(&mut self) -> &mut T {
         unsafe {
             self.inner_mut()
         }
     }
 
+    #[inline]
     pub unsafe fn get_ref_unchecked(&self) -> &T {
         self.inner()
     }
 
+    #[inline]
     pub unsafe fn get_mut_unchecked(&self) -> &mut T {
         self.inner_mut()
     }
@@ -108,8 +161,8 @@ pub struct RwWrite<'a, T: ?Sized>(&'a RwCell<T>);
 
 impl<'a, T: ?Sized> RwRead<'a, T> {
     pub fn rw_clone(&self) -> Self {
-        let count = self.0.count.get();
-        self.0.count.set(count + 1);
+        let _read = self.0.acquire_read();
+        debug_assert!(_read);
         RwRead(self.0)
     }
 
@@ -118,16 +171,15 @@ impl<'a, T: ?Sized> RwRead<'a, T> {
 
 impl<'a, T: ?Sized> Drop for RwRead<'a, T> {
     fn drop(&mut self) {
-        let count = self.0.count.get();
-        debug_assert!(count > 0);
-        self.0.count.set(count - 1);
+        let _unread = unsafe { self.0.release_read() };
+        debug_assert!(_unread);
     }
 }
 
 impl<'a, T: ?Sized> Drop for RwWrite<'a, T> {
     fn drop(&mut self) {
-        let count = self.0.count.replace(0);
-        debug_assert!(count == RW_WRITE);
+        let _unwrite = unsafe { self.0.release_write() };
+        debug_assert!(_unwrite);
     }
 }
 
