@@ -3,9 +3,11 @@ use core::task::{Poll, Context, Waker};
 use core::ops::{Deref, DerefMut};
 use core::pin::Pin;
 use crate::RwCell;
-use wakers::{Wakers, WakerQueue};
+use wakers::{Wakers, WakerQueue, SendWakers};
 
-pub struct AsyncCell<T: ?Sized, W = WakerQueue> {
+pub type AsyncCellWakers = SendWakers<WakerQueue>;
+
+pub struct AsyncCell<T: ?Sized, W = AsyncCellWakers> {
     wakers: W,
     cell: RwCell<T>,
 }

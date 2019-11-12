@@ -5,9 +5,9 @@ use core::ops::{Deref, DerefMut};
 use core::fmt;
 
 #[cfg(feature = "async")]
-mod async_cell;
+pub mod async_cell;
 #[cfg(feature = "async")]
-pub use async_cell::AsyncCell;
+pub type AsyncCell<T> = async_cell::AsyncCell<T, async_cell::AsyncCellWakers>;
 
 pub struct RwCell<T: ?Sized> {
     count: Cell<RwCount>,
