@@ -65,6 +65,30 @@ impl<T: ?Sized, W: Wakers> AsyncCell<T, W> {
     fn wake(&self) {
         self.wakers.wake_by_ref();
     }
+
+    pub fn poll_read<'a>(&'a self, context: &mut Context) -> Poll<AsyncRead<'a, T, W>> {
+        match self.cell.acquire_read() {
+            true => Poll::Ready(AsyncRead {
+                cell: self,
+            }),
+            false => {
+                self.pend(context.waker());
+                Poll::Pending
+            },
+        }
+    }
+
+    pub fn poll_write<'a>(&'a self, context: &mut Context) -> Poll<AsyncWrite<'a, T, W>> {
+        match self.acquire_write() {
+            true => Poll::Ready(AsyncWrite {
+                cell: self,
+            }),
+            false => {
+                self.pend(context.waker());
+                Poll::Pending
+            },
+        }
+    }
 }
 
 impl<T: ?Sized, W> Deref for AsyncCell<T, W> {
@@ -117,32 +141,18 @@ pub struct AsyncWrite<'a, T: ?Sized, W: Wakers> {
 impl<'a, T: ?Sized, W: Wakers> Future for AsyncReadFuture<'a, T, W> {
     type Output = AsyncRead<'a, T, W>;
 
+    #[inline]
     fn poll(self: Pin<&mut Self>, context: &mut Context) -> Poll<Self::Output> {
-        match self.cell.acquire_read() {
-            true => Poll::Ready(AsyncRead {
-                cell: self.cell,
-            }),
-            false => {
-                self.cell.pend(context.waker());
-                Poll::Pending
-            },
-        }
+        self.cell.poll_read(context)
     }
 }
 
 impl<'a, T: ?Sized, W: Wakers> Future for AsyncWriteFuture<'a, T, W> {
     type Output = AsyncWrite<'a, T, W>;
 
+    #[inline]
     fn poll(self: Pin<&mut Self>, context: &mut Context) -> Poll<Self::Output> {
-        match self.cell.acquire_write() {
-            true => Poll::Ready(AsyncWrite {
-                cell: self.cell,
-            }),
-            false => {
-                self.cell.pend(context.waker());
-                Poll::Pending
-            },
-        }
+        self.cell.poll_write(context)
     }
 }
 
