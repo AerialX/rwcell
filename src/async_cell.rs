@@ -150,7 +150,11 @@ impl<'a, T: ?Sized, W: Wakers> Drop for AsyncRead<'a, T, W> {
     fn drop(&mut self) {
         let _unread = unsafe { self.cell.release_read() };
         debug_assert!(_unread);
-        self.cell.wake();
+        match self.cell.readers() {
+            // only bother waking a write lock
+            Some(0) => self.cell.wake(),
+            _ => (),
+        }
     }
 }
 

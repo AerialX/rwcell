@@ -107,6 +107,13 @@ impl<T: ?Sized> RwCell<T> {
         count == RW_WRITE
     }
 
+    pub fn readers(&self) -> Option<RwCount> {
+        match self.count.get() {
+            RW_WRITE => None,
+            count => Some(count),
+        }
+    }
+
     #[inline]
     pub fn ptr(&self) -> *const T {
         self.inner.get() as *const _
