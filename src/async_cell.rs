@@ -28,20 +28,24 @@ impl<T, W: Default> AsyncCell<T, W> {
 }
 
 impl<T: ?Sized, W> AsyncCell<T, W> {
+    #[inline]
     pub const fn cell_ref(&self) -> &RwCell<T> {
         &self.cell
     }
 
+    #[inline]
     pub fn cell_mut(&mut self) -> &mut RwCell<T> {
         &mut self.cell
     }
 
+    #[inline]
     pub fn async_read(&self) -> AsyncReadFuture<T, W> {
         AsyncReadFuture {
             cell: self,
         }
     }
 
+    #[inline]
     pub fn async_write(&self) -> AsyncWriteFuture<T, W> {
         AsyncWriteFuture {
             cell: self,
@@ -50,10 +54,12 @@ impl<T: ?Sized, W> AsyncCell<T, W> {
 }
 
 impl<T: ?Sized, W: Wakers> AsyncCell<T, W> {
+    #[inline]
     fn pend(&self, waker: &Waker) {
         self.wakers.pend_by_ref(waker);
     }
 
+    #[inline]
     fn wake(&self) {
         self.wakers.wake_by_ref();
     }
@@ -62,18 +68,21 @@ impl<T: ?Sized, W: Wakers> AsyncCell<T, W> {
 impl<T: ?Sized, W> Deref for AsyncCell<T, W> {
     type Target = RwCell<T>;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.cell
     }
 }
 
 impl<T: ?Sized, W> DerefMut for AsyncCell<T, W> {
+    #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.cell
     }
 }
 
 impl<T: Default, W: Default> Default for AsyncCell<T, W> {
+    #[inline]
     fn default() -> Self {
         Self::new(Default::default())
     }
@@ -154,6 +163,7 @@ impl<'a, T: ?Sized, W: Wakers> Drop for AsyncWrite<'a, T, W> {
 impl<'a, T: ?Sized, W: Wakers> Deref for AsyncRead<'a, T, W> {
     type Target = T;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         unsafe {
             self.cell.get_ref_unchecked()
@@ -164,6 +174,7 @@ impl<'a, T: ?Sized, W: Wakers> Deref for AsyncRead<'a, T, W> {
 impl<'a, T: ?Sized, W: Wakers> Deref for AsyncWrite<'a, T, W> {
     type Target = T;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         unsafe {
             self.cell.get_ref_unchecked()

@@ -175,6 +175,7 @@ impl<'a, T: ?Sized> RwRead<'a, T> {
 }
 
 impl<'a, T: ?Sized> Drop for RwRead<'a, T> {
+    #[inline]
     fn drop(&mut self) {
         let _unread = unsafe { self.0.release_read() };
         debug_assert!(_unread);
@@ -182,6 +183,7 @@ impl<'a, T: ?Sized> Drop for RwRead<'a, T> {
 }
 
 impl<'a, T: ?Sized> Drop for RwWrite<'a, T> {
+    #[inline]
     fn drop(&mut self) {
         let _unwrite = unsafe { self.0.release_write() };
         debug_assert!(_unwrite);
@@ -191,6 +193,7 @@ impl<'a, T: ?Sized> Drop for RwWrite<'a, T> {
 impl<'a, T: ?Sized> Deref for RwRead<'a, T> {
     type Target = T;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         unsafe {
             self.0.get_ref_unchecked()
@@ -201,6 +204,7 @@ impl<'a, T: ?Sized> Deref for RwRead<'a, T> {
 impl<'a, T: ?Sized> Deref for RwWrite<'a, T> {
     type Target = T;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         unsafe {
             self.0.get_ref_unchecked()
@@ -209,6 +213,7 @@ impl<'a, T: ?Sized> Deref for RwWrite<'a, T> {
 }
 
 impl<'a, T: ?Sized> DerefMut for RwWrite<'a, T> {
+    #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe {
             self.0.get_mut_unchecked()
@@ -217,12 +222,14 @@ impl<'a, T: ?Sized> DerefMut for RwWrite<'a, T> {
 }
 
 impl<'a, T: ?Sized + fmt::Debug> fmt::Debug for RwRead<'a, T> {
+    #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(&**self, fmt)
     }
 }
 
 impl<'a, T: ?Sized + fmt::Debug> fmt::Debug for RwWrite<'a, T> {
+    #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(&**self, fmt)
     }
