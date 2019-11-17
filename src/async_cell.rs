@@ -2,6 +2,7 @@ use core::future::Future;
 use core::task::{Poll, Context, Waker};
 use core::ops::{Deref, DerefMut};
 use core::pin::Pin;
+use core::fmt;
 use crate::RwCell;
 use wakers::{Wakers, WakerQueue, SendWakers};
 
@@ -13,6 +14,12 @@ pub struct AsyncCell<T: ?Sized, W = AsyncCellWakers> {
 }
 
 unsafe impl<T: ?Sized + Send, W: Send> Send for AsyncCell<T, W> { }
+
+impl<T: ?Sized + fmt::Debug, W> fmt::Debug for AsyncCell<T, W> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.cell, fmt)
+    }
+}
 
 impl<T, W: Default> AsyncCell<T, W> {
     #[inline]
