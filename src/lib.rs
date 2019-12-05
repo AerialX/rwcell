@@ -1,5 +1,6 @@
 #![no_std]
 
+use unchecked_ops::*;
 use core::cell::{UnsafeCell, Cell};
 use core::ops::{Deref, DerefMut};
 use core::fmt;
@@ -85,7 +86,7 @@ impl<T: ?Sized> RwCell<T> {
             0 => false,
             RW_WRITE => false, // NOTE: it's possible to poison a cell by hitting the max read limit
             count => {
-                self.count.set(count - 1); // TODO: unchecked_sub
+                self.count.set(count.unchecked_sub(1));
                 true
             },
         }
