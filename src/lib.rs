@@ -1,3 +1,4 @@
+#![cfg_attr(feature = "unstable", feature(const_fn))]
 #![no_std]
 
 use unchecked_ops::*;

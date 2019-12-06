@@ -14,3 +14,5 @@ unchecked-ops = { version = "^0.1.0", git = "https://github.com/AerialX/unchecke
 
 [features]
 async = ["wakers", "const-default"]
+
+unstable = ["const-default"]

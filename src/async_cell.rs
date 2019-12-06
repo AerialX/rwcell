@@ -29,10 +29,30 @@ impl<T, W: Default> AsyncCell<T, W> {
 
     #[inline]
     pub fn from_cell(cell: RwCell<T>) -> Self {
+        Self::from_parts(cell, Default::default())
+    }
+}
+
+impl<T, W> AsyncCell<T, W> {
+    #[inline]
+    pub const fn from_parts(cell: RwCell<T>, wakers: W) -> Self {
         Self {
             cell,
-            wakers: Default::default(),
+            wakers,
         }
+    }
+}
+
+#[cfg(all(feature = "unstable", feature = "const-default"))]
+impl<T, W: const_default::ConstDefault> AsyncCell<T, W> {
+    #[inline]
+    pub const fn new_const(inner: T) -> Self {
+        Self::from_parts(RwCell::new(inner), const_default::ConstDefault::DEFAULT)
+    }
+
+    #[inline]
+    pub const fn from_cell_const(cell: RwCell<T>) -> Self {
+        Self::from_parts(cell, const_default::ConstDefault::DEFAULT)
     }
 }
 
