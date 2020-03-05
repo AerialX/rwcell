@@ -33,6 +33,20 @@ impl<T, W: Default> AsyncCell<T, W> {
     }
 }
 
+impl<T: Sized> From<T> for AsyncCell<T> {
+    #[inline]
+    fn from(value: T) -> Self {
+        Self::new(value)
+    }
+}
+
+impl<T: Sized> From<RwCell<T>> for AsyncCell<T> {
+    #[inline]
+    fn from(value: RwCell<T>) -> Self {
+        Self::from_cell(value)
+    }
+}
+
 impl<T, W> AsyncCell<T, W> {
     #[inline]
     pub const fn from_parts(cell: RwCell<T>, wakers: W) -> Self {

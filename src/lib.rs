@@ -48,6 +48,12 @@ impl<T: const_default::ConstDefault> const_default::ConstDefault for RwCell<T> {
     const DEFAULT: Self = Self::new(T::DEFAULT);
 }
 
+impl<T: Sized> From<T> for RwCell<T> {
+    fn from(value: T) -> Self {
+        Self::new(value)
+    }
+}
+
 impl<T: ?Sized> RwCell<T> {
     #[inline]
     pub const fn new(value: T) -> Self where
