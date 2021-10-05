@@ -7,7 +7,7 @@ description = "RefCell except not"
 categories = ["no-std"]
 
 [dependencies]
-const-default = { version = "^0.1.0", git = "https://github.com/AerialX/const-default.rs", optional = true }
+const-default = { version = "^0.3.0", optional = true }
 futures-core = { version = "^0.3.1", default-features = false, optional = true }
 wakers = { version = "^0.1.0", git = "https://github.com/AerialX/wakers.rs.git", default-features = false, optional = true }
 unchecked-ops = { version = "^0.1.0", git = "https://github.com/AerialX/unchecked-ops.rs" }
@@ -15,4 +15,4 @@ unchecked-ops = { version = "^0.1.0", git = "https://github.com/AerialX/unchecke
 [features]
 async = ["wakers", "const-default"]
 
-unstable = ["const-default"]
+unstable = []
